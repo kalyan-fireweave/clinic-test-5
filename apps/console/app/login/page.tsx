@@ -3,6 +3,7 @@
 import { createAuthClient } from "better-auth/react";
 import Link from "next/link";
 import { useState } from "react";
+import { fw } from "@fireweaveai/web-sdk/start";
 import { Button } from "../../components/Button";
 import { COPY } from "../../lib/copy";
 import { ERROR_CODES } from "../../lib/errors";
@@ -18,7 +19,7 @@ export default function LoginPage() {
     setError("");
     setPending(true);
     const form = new FormData(event.currentTarget);
-    const { error: signInError } = await authClient.signIn.email({
+    const { data, error: signInError } = await authClient.signIn.email({
       email: String(form.get("email") ?? ""),
       password: String(form.get("password") ?? ""),
     });
@@ -26,6 +27,11 @@ export default function LoginPage() {
       setPending(false);
       setError(COPY.signInError);
       return;
+    }
+    if (data?.user?.id) {
+      // Sign-in: register the user before the first audience-gated render. The
+      // authenticated shell re-identifies with full properties on session restore.
+      await fw.identify(data.user.id, { email: data.user.email });
     }
     window.location.href = "/inbox";
   }
